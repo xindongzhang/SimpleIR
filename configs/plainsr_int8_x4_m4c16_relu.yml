@@ -4,31 +4,30 @@ scale: 4
 colors: 1
 m_plainsr: 4
 c_plainsr: 16
-with_bn: 1
+with_bn: 0
 act_type: 'relu'
-pretrain:
+pretrain: './experiments/plainsr-fp32-x4-2022-0417-0338/models/model_x4_26.pt'
 
 ## parameters for model training
 patch_size: 256
-batch_size: 32
+batch_size: 64
 data_repeat: 64
 data_augment: 1
 
-qat_epoch: 100
-qat_end: 150
-epochs: 200
+is_qat: 1
+epochs: 10
 lr: 0.0005
-decays: 100, 200
-gamma: 0.1
-store_in_ram: 0
+decays: [100]
+gamma: 0.5
 log_every: 100
 test_every: 1
 log_path: "./experiments"
 log_name:
 
 ## hardware specification
-gpu_ids: 0, 1
-threads: 8
+gpu_ids: [1]
+threads: 4
 
 ## data specification
 data_path: '/home/xindongzhang/SR_datasets'
+eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']

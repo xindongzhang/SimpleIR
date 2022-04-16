@@ -12,6 +12,7 @@ from math import exp
 from pytorch_msssim import ssim
 import importlib
 
+
 def rgb_to_ycbcr(image: torch.Tensor) -> torch.Tensor:
     r"""Convert an RGB image to YCbCr.
 
@@ -41,10 +42,8 @@ def rgb_to_ycbcr(image: torch.Tensor) -> torch.Tensor:
 
 def prepare_qat(model):
     ## fuse model
-    for m in model.modules():
-        if type(m) == nn.Sequential and hasattr(m, 'conv'):
-            torch.quantization.fuse_modules(m, ['conv', 'bn', 'relu'], inplace=True)
-    ## qconfig and qat-preparation
+    model.module.fuse_model()
+    ## qconfig and qat-preparation & per-channel quantization
     model.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
     # model.qconfig = torch.quantization.get_default_qat_qconfig('qnnpack')
     # model.qconfig = torch.quantization.QConfig(

@@ -27,7 +27,7 @@ if __name__ == '__main__':
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
-    from torch.optim.lr_scheduler import MultiStepLR
+    from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingWarmRestarts
     from datas.utils import create_datasets
 
 
@@ -56,16 +56,26 @@ if __name__ == '__main__':
     ## definition of loss and optimizer
     loss_func = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    # decays = args.decays.split(',')
-    # milestones = []
-    # for stone in argsdecays:
-    #     milestones.append(int(stone.strip()))
-    scheduler = MultiStepLR(optimizer, milestones=args.decays, gamma=args.gamma)
+
+    if not args.is_qat:
+        print('use MultiStepLR scheduler')
+        scheduler = MultiStepLR(optimizer, milestones=args.decays, gamma=args.gamma)
+    else:
+        print('use CosineAnnealingWarmRestarts scheduler')
+        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=args.epochs//10, T_mult=1, eta_min=0, last_epoch=- 1, verbose=False)
 
     ## load pretrain
     if args.pretrain is not None:
         print('load pretrained model: {}!'.format(args.pretrain))
-        model.load_state_dict(torch.load(args.pretrain))
+        ckpt = torch.load(args.pretrain)
+        model.load_state_dict(ckpt['model_state_dict'])
+        ## if qat
+    if args.is_qat:
+        if args.pretrain is not None:
+            print('start quantization-awared training !')
+            model = utils.prepare_qat(model)
+        else:
+            raise ValueError('please provide pre-trained model for qat!')
     
     ## resume training
     start_epoch = 1
@@ -75,10 +85,7 @@ if __name__ == '__main__':
             ckpt_files = sorted(ckpt_files, key=lambda x: int(x.replace('.pt','').split('_')[-1]))
             ckpt = torch.load(ckpt_files[-1])
             prev_epoch = ckpt['epoch']
-            if prev_epoch >= args.qat_epoch and args.qat_epoch > 0:
-                print('start quantization-awared training !')
-                model = utils.prepare_qat(model)
-                args.qat_epoch = -1
+
             start_epoch = prev_epoch + 1
             model.load_state_dict(ckpt['model_state_dict'])
             optimizer.load_state_dict(ckpt['optimizer_state_dict'])
@@ -94,7 +101,7 @@ if __name__ == '__main__':
         experiment_name = None
         timestamp = utils.cur_timestamp_str()
         if args.log_name is None:
-            experiment_name = '{}-x{}-{}'.format(args.model, args.scale, timestamp)
+            experiment_name = '{}-{}-x{}-{}'.format(args.model, 'int8' if args.is_qat else 'fp32', args.scale, timestamp)
         else:
             experiment_name = '{}-{}'.format(args.log_name, timestamp)
         experiment_path = os.path.join(args.log_path, experiment_name)
@@ -112,7 +119,6 @@ if __name__ == '__main__':
         with open(exp_params_name, 'w') as exp_params_file:
             yaml.dump(exp_params, exp_params_file, default_flow_style=False)
 
-            
     ## print architecture of model
     time.sleep(3) # sleep 3 seconds 
     sys.stdout = utils.ExperimentLogger(log_name, sys.stdout)
@@ -127,17 +133,13 @@ if __name__ == '__main__':
         model = model.train()
         opt_lr = scheduler.get_last_lr()
 
-        ## performing qat
-        if epoch >= args.qat_epoch and args.qat_epoch > 0:
-            print('start quantization-awared training !')
-            model = utils.prepare_qat(model)
+        ## best practice
+        if epoch > 2 and args.is_qat:
             model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
-            args.qat_epoch = -1
-        if epoch >= args.qat_end and args.qat_end > 0:
+        if epoch > 3 and args.is_qat:
             model.apply(torch.quantization.disable_observer)
-            args.qat_end = -1
 
-        print('##===========Epoch: {}, lr: {} =============##'.format(epoch, opt_lr))
+        print('##==========={}-training, Epoch: {}, lr: {} =============##'.format('int8' if args.is_qat else 'fp32', epoch, opt_lr))
         for iter, batch in enumerate(train_dataloader):
             optimizer.zero_grad()
             lr, hr = batch
@@ -176,7 +178,7 @@ if __name__ == '__main__':
                 for lr, hr in tqdm(loader, ncols=80):
                     lr, hr = lr.to(device), hr.to(device)
                     sr = model(lr)
-                    # quantize
+                    # quantize output to [0, 255]
                     hr = hr.clamp(0, 255)
                     sr = sr.clamp(0, 255)
                     # conver to ycbcr

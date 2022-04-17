@@ -4,18 +4,18 @@ scale: 4
 colors: 1
 m_plainsr: 4
 c_plainsr: 16
-with_bn: 0
+with_bn: 1
 act_type: 'relu'
-pretrain: './experiments/plainsr-fp32-x4-2022-0417-0338/models/model_x4_26.pt'
+pretrain: './experiments/plainsr-fp32-x4-2022-0417-1849/models/model_x4_254.pt'
 
 ## parameters for model training
 patch_size: 256
-batch_size: 64
+batch_size: 32
 data_repeat: 64
 data_augment: 1
 
 is_qat: 1
-epochs: 10
+epochs: 100
 lr: 0.0005
 decays: [100]
 gamma: 0.5

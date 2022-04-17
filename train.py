@@ -57,12 +57,13 @@ if __name__ == '__main__':
     loss_func = nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    if not args.is_qat:
-        print('use MultiStepLR scheduler')
-        scheduler = MultiStepLR(optimizer, milestones=args.decays, gamma=args.gamma)
-    else:
-        print('use CosineAnnealingWarmRestarts scheduler')
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=args.epochs//10, T_mult=1, eta_min=0, last_epoch=- 1, verbose=False)
+    # if not args.is_qat:
+    #     print('use MultiStepLR scheduler')
+    #     scheduler = MultiStepLR(optimizer, milestones=args.decays, gamma=args.gamma)
+    # else:
+    #     print('use CosineAnnealingWarmRestarts scheduler')
+    #     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=args.epochs//10, T_mult=1, eta_min=0, last_epoch=- 1, verbose=False)
+    scheduler = MultiStepLR(optimizer, milestones=args.decays, gamma=args.gamma)
 
     ## load pretrain
     if args.pretrain is not None:
@@ -132,13 +133,11 @@ if __name__ == '__main__':
         stat_dict['epochs'] = epoch
         model = model.train()
         opt_lr = scheduler.get_last_lr()
-
-        ## best practice
-        if epoch > 2 and args.is_qat:
-            model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
-        if epoch > 3 and args.is_qat:
-            model.apply(torch.quantization.disable_observer)
-
+        # # ## best practice
+        # if epoch > 2 and args.is_qat:
+        #     model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
+        # if epoch > 3 and args.is_qat:
+        #     model.apply(torch.quantization.disable_observer)
         print('##==========={}-training, Epoch: {}, lr: {} =============##'.format('int8' if args.is_qat else 'fp32', epoch, opt_lr))
         for iter, batch in enumerate(train_dataloader):
             optimizer.zero_grad()

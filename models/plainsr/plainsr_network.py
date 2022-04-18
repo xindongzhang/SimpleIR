@@ -70,10 +70,14 @@ class PlainSR(nn.Module):
                         torch.quantization.fuse_modules(m.block, ['0', '1', '2'], inplace=True)
                     else:
                         torch.quantization.fuse_modules(m.block, ['0', '1'], inplace=True)
+                else:
+                    if self.with_bn:
+                        torch.quantization.fuse_modules(m.block, ['0', '1'], inplace=True)
 
     def forward(self, x):
         x = self.quant(x)
         y = self.shortcut.add(self.backbone(x), x.repeat(1, self.colors*self.scale*self.scale, 1, 1).contiguous())
         y = self.upsampler(y)
+        y = torch.clamp(y, min=0.0, max=255.0)
         y = self.dequant(y)
         return y

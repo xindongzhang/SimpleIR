@@ -150,6 +150,14 @@ class SeqConv3x3(nn.Module):
             # re-param conv bias
             RB = torch.ones(1, self.out_planes, 3, 3, device=device) * self.b0.view(1, -1, 1, 1)
             RB = F.conv2d(input=RB, weight=k1).view(-1,) + b1
+        
+        if self.with_bn:
+            v = torch.sqrt(self.bn.running_var + self.bn.eps)
+            m = self.bn.running_mean
+            s = self.bn.weight
+            b = self.bn.bias
+            RK = (s/v) * RK 
+            RB = (s/v) * (RB - m) + b
         return RK, RB
 
 
@@ -196,32 +204,32 @@ class ECB(nn.Module):
             raise ValueError('The type of activation if not support!')
 
     def forward(self, x):
-        # if self.training:
-        #     y = self.conv3x3(x)     + \
-        #         self.conv1x1_3x3(x) + \
-        #         self.conv1x1_sbx(x) + \
-        #         self.conv1x1_sby(x) + \
-        #         self.conv1x1_lpl(x)
-        #     if self.with_idt:
-        #         y += x
-        # else:
-        #     RK, RB = self.rep_params()
-        #     y = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1) 
-        # if self.act_type != 'linear':
-        #     y = self.act(y)
-        y = self.conv3x3(x)     + \
-            self.conv1x1_3x3(x) + \
-            self.conv1x1_sbx(x) + \
-            self.conv1x1_sby(x) + \
-            self.conv1x1_lpl(x)
-        if self.with_idt:
-            y += x
+        if self.training:
+            y = self.conv3x3(x)     + \
+                self.conv1x1_3x3(x) + \
+                self.conv1x1_sbx(x) + \
+                self.conv1x1_sby(x) + \
+                self.conv1x1_lpl(x)
+            if self.with_idt:
+                y += x
+        else:
+            RK, RB = self.rep_params()
+            y = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1) 
         if self.act_type != 'linear':
             y = self.act(y)
         return y
 
     def rep_params(self):
-        K0, B0 = self.conv3x3.weight, self.conv3x3.bias
+        if self.with_bn:
+            K0, B0 = self.conv3x3[0].weight, self.conv3x3[0].bias
+            v = torch.sqrt(self.conv3x3[1].running_var + self.conv3x3[1].eps)
+            m = self.conv3x3[1].running_mean
+            s = self.conv3x3[1].weight
+            b = self.conv3x3[1].bias
+            K0 = (s/v) * K0 
+            B0 = (s/v) * (B0 - m) + b 
+        else:
+            K0, B0 = self.conv3x3.weight, self.conv3x3.bias
         K1, B1 = self.conv1x1_3x3.rep_params()
         K2, B2 = self.conv1x1_sbx.rep_params()
         K3, B3 = self.conv1x1_sby.rep_params()
@@ -241,17 +249,17 @@ class ECB(nn.Module):
 
 if __name__ == '__main__':
 
-    # # test seq-conv
-    x = torch.randn(1, 3, 5, 5).cuda()
-    conv = SeqConv3x3('conv1x1-conv3x3', 3, 3, 2).cuda()
-    y0 = conv(x)
-    RK, RB = conv.rep_params()
-    y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
-    print(y0-y1)
+    # # # test seq-conv
+    # x = torch.randn(1, 3, 5, 5).cuda()
+    # conv = SeqConv3x3('conv1x1-conv3x3', 3, 3, 2, with_bn=True).cuda().eval()
+    # y0 = conv(x)
+    # RK, RB = conv.rep_params()
+    # y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
+    # print(y0-y1)
 
     # test ecb
     x = torch.randn(1, 3, 5, 5).cuda() * 200
-    ecb = ECB(3, 3, 2, act_type='linear', with_idt=True).cuda()
+    ecb = ECB(3, 3, 2, act_type='linear', with_idt=True, with_bn=True).cuda().eval()
     y0 = ecb(x)
 
     RK, RB = ecb.rep_params()

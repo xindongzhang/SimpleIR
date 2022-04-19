@@ -1,5 +1,5 @@
-## parameters for ecbsr
 model: 'edsr'
+## parameters for ecbsr
 scale: 4
 colors: 1
 n_resblocks: 16
@@ -13,9 +13,11 @@ patch_size: 192
 batch_size: 32
 data_repeat: 64
 data_augment: 1
+
+is_qat: 0
 epochs: 1000
 lr: 0.0002
-decays: 250, 500
+decays: [250, 500]
 gamma: 0.5
 store_in_ram: 0
 log_every: 100
@@ -24,8 +26,9 @@ log_path: "./experiments"
 log_name: 
 
 ## hardware specification
-gpu_ids: 0, 1
-threads: 1
+gpu_ids: [0, 1]
+threads: 4
 
 ## data specification
 data_path: '/home/xindongzhang/SR_datasets'
+eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']

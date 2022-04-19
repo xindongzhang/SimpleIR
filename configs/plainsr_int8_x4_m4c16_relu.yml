@@ -7,19 +7,20 @@ c_plainsr: 16
 with_bn: 1
 act_type: 'relu'
 # pretrain: './experiments/plainsr-fp32-x4-2022-0417-1849/models/model_x4_304.pt'
-pretrain: './experiments/plainsr-fp32-x4-2022-0419-0201/models/model_x4_123.pt'
+pretrain: './experiments/plainsr-fp32-x4-2022-0419-0201/models/model_x4_299.pt'
 
 ## parameters for model training
-patch_size: 256
+# patch_size: 256
+patch_size: 192
 batch_size: 32
 data_repeat: 64
 data_augment: 1
 
 is_qat: 1
-epochs: 10   # finetune only 10-epochs 
-lr: 0.000005    # 1% of the initial-lr, i.e init-lr: 5*e-4, finetune-lr, 5*e-6
-decays: 1    # lr decays every N epochs
-gamma: 0.633 # gamma^10 roughly equal to 0.01
+epochs: 10    # finetune only 10-epochs 
+lr: 0.000005  # 1% of the initial-lr, i.e init-lr: 5*e-4, finetune-lr: 5*e-6
+decays: 1     # lr decays every N epochs
+gamma: 0.633  # gamma^10 roughly equal to 0.01
 log_every: 100
 test_every: 1
 log_path: "./experiments"

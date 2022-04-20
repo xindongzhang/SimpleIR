@@ -14,6 +14,8 @@ patch_size: 256
 batch_size: 32
 data_repeat: 64
 data_augment: 1
+
+is_qat: 0
 epochs: 1000
 lr: 0.0005
 decays: [250, 500]
@@ -24,8 +26,9 @@ log_path: "./experiments"
 log_name: 
 
 ## hardware specification
-gpu_ids: [1]
-threads: 4
+gpu_ids: [0]
+threads: 8
 
 ## data specification
 data_path: '/home/xindongzhang/SR_datasets'
+eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']

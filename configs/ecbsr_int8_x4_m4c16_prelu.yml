@@ -1,0 +1,34 @@
+model: 'ecbsr'
+## parameters for ecbsr
+scale: 4
+colors: 1
+m_ecbsr: 4
+c_ecbsr: 16
+with_idt: 1
+with_bn: 1
+act_type: 'prelu'
+pretrain: './experiments/ecbsr-fp32-x4-2022-0420-1312/models/model_x4_82.pt'
+
+## parameters for model training
+patch_size: 192
+batch_size: 32
+data_repeat: 64
+data_augment: 1
+
+is_qat: 1
+epochs: 10    # finetune only 10-epochs 
+lr: 0.000005  # 1% of the initial-lr, i.e init-lr: 5*e-4, finetune-lr: 5*e-6
+decays: 1     # lr decays every N epochs
+gamma: 0.633  # gamma^10 roughly equal to 0.01
+log_every: 100
+test_every: 1
+log_path: "./experiments"
+log_name:
+
+## hardware specification
+gpu_ids: [1]
+threads: 8
+
+## data specification
+data_path: '/home/xindongzhang/SR_datasets'
+eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']

@@ -2,6 +2,38 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class Conv3X3(nn.Module):
+    def __init__(self, inp_planes, out_planes, act_type='prelu', with_bn=False):
+        super(Conv3X3, self).__init__()
+
+        self.inp_planes = inp_planes
+        self.out_planes = out_planes
+        self.act_type = act_type
+        self.with_bn = with_bn
+
+        self.block = [nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)]
+        if self.with_bn:
+            self.block += [nn.BatchNorm2d(self.out_planes)]
+        ## activation selection
+        if self.act_type == 'prelu':
+            self.block += [nn.PReLU(num_parameters=self.out_planes)]
+        elif self.act_type == 'relu':
+            self.block += [nn.ReLU(inplace=True)]
+        elif self.act_type == 'rrelu':
+            self.block += [nn.RReLU(lower=-0.05, upper=0.05)]
+        elif self.act_type == 'softplus':
+            self.block += [nn.Softplus()]
+        elif self.act_type == 'linear':
+            pass
+        else:
+            raise ValueError('The type of activation if not support!')
+        ## initialize block
+        self.block = nn.Sequential(*self.block)
+
+    def forward(self, x):
+        x = self.block(x)
+        return x
+
 class SeqConv3x3(nn.Module):
     def __init__(self, seq_type, inp_planes, out_planes, depth_multiplier, with_bn=False):
         super(SeqConv3x3, self).__init__()
@@ -156,7 +188,7 @@ class SeqConv3x3(nn.Module):
             m = self.bn.running_mean
             s = self.bn.weight
             b = self.bn.bias
-            RK = (s/v) * RK 
+            RK = (s/v).reshape(self.out_planes, 1, 1, 1) * RK 
             RB = (s/v) * (RB - m) + b
         return RK, RB
 
@@ -226,7 +258,7 @@ class ECB(nn.Module):
             m = self.conv3x3[1].running_mean
             s = self.conv3x3[1].weight
             b = self.conv3x3[1].bias
-            K0 = (s/v) * K0 
+            K0 = (s/v).reshape(self.out_planes, 1, 1, 1) * K0 
             B0 = (s/v) * (B0 - m) + b 
         else:
             K0, B0 = self.conv3x3.weight, self.conv3x3.bias

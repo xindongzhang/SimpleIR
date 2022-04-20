@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.quantization import QuantStub, DeQuantStub
 from torch.nn.quantized import FloatFunctional
+
 def create_model(args):
     return PlainSR(args)
 

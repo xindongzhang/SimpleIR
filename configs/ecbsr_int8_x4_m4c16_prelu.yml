@@ -7,7 +7,7 @@ c_ecbsr: 16
 with_idt: 1
 with_bn: 1
 act_type: 'prelu'
-pretrain: './experiments/ecbsr-fp32-x4-2022-0420-1312/models/model_x4_82.pt'
+pretrain: './experiments/ecbsr-fp32-x4-2022-0420-1312/models/model_x4_685.pt'
 
 ## parameters for model training
 patch_size: 192

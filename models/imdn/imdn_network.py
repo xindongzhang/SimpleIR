@@ -1,5 +1,9 @@
 import torch.nn as nn
-from models.imdn import imdn_block as B
+
+try:
+    from models.imdn import imdn_block as B
+except ModuleNotFoundError:
+    import imdn_block as B
 import torch
 
 def create_model(args):
@@ -44,3 +48,17 @@ class IMDN(nn.Module):
         out_lr = self.LR_conv(out_B) + out_fea
         output = self.upsampler(out_lr)
         return output
+
+if __name__ == '__main__':
+    import numpy as np
+    from torch.autograd import Variable
+    import argparse
+    args = argparse.ArgumentParser(description='')
+    args.colors = 1
+    args.num_modules = 6
+    args.nf = 16
+    args.scale = 4
+
+    model = IMDN(args).cpu().eval()
+    model.cpu()
+    model.eval()

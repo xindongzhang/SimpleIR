@@ -1,3 +1,6 @@
 *.pyc
 *.pt
 experiments/*
+*.tflite
+*.onnx
+*.pth

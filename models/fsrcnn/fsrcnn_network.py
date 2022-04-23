@@ -101,31 +101,8 @@ if __name__ == '__main__':
     args.colors = 1
 
     model = PlainSR(args).eval()
-
-    from tinynn.converter import TFLiteConverter
     model.cpu()
     model.eval()
 
-    
-    dummy_input = torch.rand((1, 1, 256, 256))
 
-    torch.onnx.export(model, dummy_input, './plainsr.onnx', export_params=True, opset_version=10, do_constant_folding=True, input_names = ['input'], output_names = ['output'])
 
-    converter = TFLiteConverter(model, dummy_input, './plainsr.tflite', input_transpose=True, output_transpose=True, group_conv_rewrite=True)
-    converter.convert()
-
-    from tinynn.graph.tracer import model_tracer, trace
-
-    with model_tracer():
-        # Prapare the model
-        # It's okay to put the construction of the model out of the
-        # with-block, but actually leave it here would be better.
-        # The latter one guarantees that the arguments that is used
-        # to build the model is caught, while the other one doesn't.
-
-        # After tracing the model, we will get a TraceGraph object
-        graph = trace(model, dummy_input)
-
-        # We can use it to generate the code for the original model
-        # But be careful that it has to be in the with-block.
-        graph.generate_code('gen_plainsr.py', 'plainsr.pth', 'plainsr')

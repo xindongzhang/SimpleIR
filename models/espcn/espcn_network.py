@@ -84,22 +84,7 @@ class ESPCN(nn.Module):
         return y
     
 if __name__ == '__main__':
-    import numpy as np
-    from torch.autograd import Variable
-    import argparse
-    args = argparse.ArgumentParser(description='')
-    args.m_plainsr = 4
-    args.c_plainsr = 16
-    args.with_idt = 1
-    args.with_bn = 1
-    args.act_type = 'relu'
-    args.model = 'plainsr'
-    args.scale = 4
-    args.colors = 1
-
-    model = PlainSR(args).eval()
-    model.cpu()
-    model.eval()
+    pass
 
 
 

@@ -1,0 +1,32 @@
+model: 'vdsr'
+## parameters for plain
+scale: 4
+colors: 1
+with_bn: 1
+act_type: 'relu'
+upsample_type: 'nearest'
+pretrain:
+
+## parameters for model training
+patch_size: 192
+batch_size: 16
+data_repeat: 64
+data_augment: 1
+
+is_qat: 0
+epochs: 500
+lr: 0.0005
+decays: [500]
+gamma: 0.5
+log_every: 100
+test_every: 1
+log_path: "./experiments"
+log_name:
+
+## hardware specification
+gpu_ids: [1]
+threads: 8
+
+## data specification
+data_path: '/home/xindongzhang/SR_datasets'
+eval_sets: ['Set5', 'Set14', 'B100', 'Urban100', 'Manga109']

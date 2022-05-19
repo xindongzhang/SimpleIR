@@ -9,7 +9,7 @@ import time
 import importlib
 import glob
 
-parser = argparse.ArgumentParser(description='EasySR')
+parser = argparse.ArgumentParser(description='SimpleIR')
 ## yaml configuration files
 parser.add_argument('--config', type=str, default=None, help = 'pre-config file for training')
 parser.add_argument('--resume', type=str, default=None, help = 'resume training or not')
